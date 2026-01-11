@@ -1,0 +1,37 @@
+# ======================
+# Maven / Java
+# ======================
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse / IntelliJ / VSCode project files
+/.idea/
+/*.iml
+/.vscode/
+
+# Logs and temp files
+*.log
+*.tmp
+
+# OS-specific files
+# Windows
+Thumbs.db
+ehthumbs.db
+*.bak
+*.swp
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ======================
+# Protobuf / gRPC generated code
+# ======================
+/target/generated-sources/
+/target/protoc-dependencies/
+
+# ======================
+# Spring Boot specific
+# ======================
+/spring.log
