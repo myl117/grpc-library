@@ -19,70 +19,70 @@ import java.util.Optional;
 @Component
 public class GrpcServer {
 
-    private Server server;
+  private Server server;
 
-    // In-memory list of books
-    private final List<BookResponse> books = new ArrayList<>();
+  // In-memory list of books
+  private final List < BookResponse > books = new ArrayList < > ();
 
-    @PostConstruct
-    public void start() throws IOException {
-        // Add sample books
-        books.add(BookResponse.newBuilder()
-                .setId(1)
-                .setTitle("1984")
-                .setAuthor("George Orwell")
-                .setAvailable(true)
-                .build());
-        books.add(BookResponse.newBuilder()
-                .setId(2)
-                .setTitle("The Hobbit")
-                .setAuthor("J.R.R. Tolkien")
-                .setAvailable(false)
-                .build());
+  @PostConstruct
+  public void start() throws IOException {
+    // Add sample books
+    books.add(BookResponse.newBuilder()
+      .setId(1)
+      .setTitle("1984")
+      .setAuthor("George Orwell")
+      .setAvailable(true)
+      .build());
+    books.add(BookResponse.newBuilder()
+      .setId(2)
+      .setTitle("The Hobbit")
+      .setAuthor("J.R.R. Tolkien")
+      .setAvailable(false)
+      .build());
 
-        // Start gRPC server on port 9090
-        server = ServerBuilder.forPort(9090)
-                .addService(new LibraryServiceImpl())
-                .build()
-                .start();
+    // Start gRPC server on port 9090
+    server = ServerBuilder.forPort(9090)
+      .addService(new LibraryServiceImpl())
+      .build()
+      .start();
 
-        System.out.println("gRPC server started on port 9090");
+    System.out.println("gRPC server started on port 9090");
+  }
+
+  @PreDestroy
+  public void stop() {
+    if (server != null) {
+      server.shutdown();
+      System.out.println("gRPC server stopped");
+    }
+  }
+
+  // Implementation of the gRPC service
+  private class LibraryServiceImpl extends LibraryServiceGrpc.LibraryServiceImplBase {
+
+    @Override
+    public void getBook(BookRequest request, StreamObserver < BookResponse > responseObserver) {
+      Optional < BookResponse > book = books.stream()
+        .filter(b -> b.getId() == request.getId())
+        .findFirst();
+
+      responseObserver.onNext(book.orElse(
+        BookResponse.newBuilder()
+        .setId(0)
+        .setTitle("Not Found")
+        .setAuthor("")
+        .setAvailable(false)
+        .build()
+      ));
+      responseObserver.onCompleted();
     }
 
-    @PreDestroy
-    public void stop() {
-        if (server != null) {
-            server.shutdown();
-            System.out.println("gRPC server stopped");
-        }
+    @Override
+    public void listBooks(com.myl117.java.library.grpc.service.LibraryProto.Empty Empty, StreamObserver < BookList > responseObserver) {
+      BookList.Builder builder = BookList.newBuilder();
+      builder.addAllBooks(books);
+      responseObserver.onNext(builder.build());
+      responseObserver.onCompleted();
     }
-
-    // Implementation of the gRPC service
-    private class LibraryServiceImpl extends LibraryServiceGrpc.LibraryServiceImplBase {
-
-        @Override
-        public void getBook(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-            Optional<BookResponse> book = books.stream()
-                    .filter(b -> b.getId() == request.getId())
-                    .findFirst();
-
-            responseObserver.onNext(book.orElse(
-                    BookResponse.newBuilder()
-                            .setId(0)
-                            .setTitle("Not Found")
-                            .setAuthor("")
-                            .setAvailable(false)
-                            .build()
-            ));
-            responseObserver.onCompleted();
-        }
-
-        @Override
-        public void listBooks(com.myl117.java.library.grpc.service.LibraryProto.Empty Empty, StreamObserver<BookList> responseObserver) {
-            BookList.Builder builder = BookList.newBuilder();
-            builder.addAllBooks(books);
-            responseObserver.onNext(builder.build());
-            responseObserver.onCompleted();
-        }
-    }
+  }
 }
