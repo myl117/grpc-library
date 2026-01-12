@@ -22,7 +22,7 @@ public class GrpcServer {
   private Server server;
 
   // In-memory list of books
-  private final List < BookResponse > books = new ArrayList < > ();
+  private final List <BookResponse> books = new ArrayList <>();
 
   @PostConstruct
   public void start() throws IOException {
@@ -61,8 +61,8 @@ public class GrpcServer {
   private class LibraryServiceImpl extends LibraryServiceGrpc.LibraryServiceImplBase {
 
     @Override
-    public void getBook(BookRequest request, StreamObserver < BookResponse > responseObserver) {
-      Optional < BookResponse > book = books.stream()
+    public void getBook(BookRequest request, StreamObserver <BookResponse> responseObserver) {
+      Optional <BookResponse> book = books.stream()
         .filter(b -> b.getId() == request.getId())
         .findFirst();
 
@@ -78,7 +78,7 @@ public class GrpcServer {
     }
 
     @Override
-    public void listBooks(com.myl117.java.library.grpc.service.LibraryProto.Empty Empty, StreamObserver < BookList > responseObserver) {
+    public void listBooks(com.myl117.java.library.grpc.service.LibraryProto.Empty Empty, StreamObserver <BookList> responseObserver) {
       BookList.Builder builder = BookList.newBuilder();
       builder.addAllBooks(books);
       responseObserver.onNext(builder.build());
