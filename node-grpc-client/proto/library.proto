@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option java_package = "com.myl117.java.library.grpc.service";
+option java_outer_classname = "LibraryProto";
+
+service LibraryService {
+  // Get information about a book by ID
+  rpc GetBook (BookRequest) returns (BookResponse);
+
+  // List all books
+  rpc ListBooks (Empty) returns (BookList);
+}
+
+message Empty {}
+
+message BookRequest {
+  int32 id = 1;
+}
+
+message BookResponse {
+  int32 id = 1;
+  string title = 2;
+  string author = 3;
+  bool available = 4;
+}
+
+message BookList {
+  repeated BookResponse books = 1;
+}

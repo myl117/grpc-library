@@ -1,6 +1,4 @@
-# ======================
-# Maven / Java
-# ======================
+# maven
 /target/
 !.mvn/wrapper/maven-wrapper.jar
 
@@ -25,16 +23,15 @@ ehthumbs.db
 .AppleDouble
 .LSOverride
 
-# ======================
-# Protobuf / gRPC generated code
-# ======================
+# protobuf/gRPC generated code
 /target/generated-sources/
 /target/protoc-dependencies/
 
-# ======================
-# Spring Boot specific
-# ======================
+# spring boot
 /spring.log
 
 # misc
 .gitconfig.txt
+
+# node
+node_modules

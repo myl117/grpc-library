@@ -39,6 +39,12 @@ public class GrpcServer {
       .setAuthor("J.R.R. Tolkien")
       .setAvailable(false)
       .build());
+      books.add(BookResponse.newBuilder()
+      .setId(3)
+      .setTitle("Sunrise on the Reaping")
+      .setAuthor("Suzanne Collins")
+      .setAvailable(false)
+      .build());
 
     // Start gRPC server on port 9090
     server = ServerBuilder.forPort(9090)
