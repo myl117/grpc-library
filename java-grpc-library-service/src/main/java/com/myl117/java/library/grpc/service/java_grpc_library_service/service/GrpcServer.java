@@ -6,6 +6,7 @@ import com.myl117.java.library.grpc.service.LibraryProto.BookList;
 import com.myl117.java.library.grpc.service.LibraryServiceGrpc;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.protobuf.services.ProtoReflectionService;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -49,6 +50,7 @@ public class GrpcServer {
     // Start gRPC server on port 9090
     server = ServerBuilder.forPort(9090)
       .addService(new LibraryServiceImpl())
+      .addService(ProtoReflectionService.newInstance())
       .build()
       .start();
 
