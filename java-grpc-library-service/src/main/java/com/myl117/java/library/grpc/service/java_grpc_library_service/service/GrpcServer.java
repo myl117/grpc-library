@@ -1,14 +1,10 @@
 package com.myl117.java.library.grpc.service.java_grpc_library_service.service;
 
-import com.myl117.java.library.grpc.service.LibraryProto.BookRequest;
-import com.myl117.java.library.grpc.service.LibraryProto.BookResponse;
-import com.myl117.java.library.grpc.service.LibraryProto.BookList;
-import com.myl117.java.library.grpc.service.LibraryServiceGrpc;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.Status;
+import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
+import io.grpc.protobuf.services.HealthStatusManager;
 import io.grpc.protobuf.services.ProtoReflectionService;
-import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -17,53 +13,36 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import com.google.protobuf.Empty;
 
 @Component
 public class GrpcServer {
 
   private static final Logger log = LoggerFactory.getLogger(GrpcServer.class);
 
+  /** gRPC service name as declared in the proto (package + service). */
+  private static final String SERVICE_NAME = "library.LibraryService";
+
   @Value("${grpc.server.port}")
   private int grpcPort;
 
   private Server server;
-
-  // In-memory list of books — CopyOnWriteArrayList for thread safety under concurrent gRPC requests
-  private final List<BookResponse> books = new CopyOnWriteArrayList<>();
+  private HealthStatusManager healthStatusManager;
 
   @PostConstruct
   public void start() throws IOException {
-    // Add sample books
-    books.add(BookResponse.newBuilder()
-      .setId(1)
-      .setTitle("1984")
-      .setAuthor("George Orwell")
-      .setAvailable(true)
-      .build());
-    books.add(BookResponse.newBuilder()
-      .setId(2)
-      .setTitle("The Hobbit")
-      .setAuthor("J.R.R. Tolkien")
-      .setAvailable(false)
-      .build());
-      books.add(BookResponse.newBuilder()
-      .setId(3)
-      .setTitle("Sunrise on the Reaping")
-      .setAuthor("Suzanne Collins")
-      .setAvailable(false)
-      .build());
+    healthStatusManager = new HealthStatusManager();
 
-    // Start gRPC server on configured port
     server = ServerBuilder.forPort(grpcPort)
       .addService(new LibraryServiceImpl())
       .addService(ProtoReflectionService.newInstance())
+      .addService(healthStatusManager.getHealthService())
       .build()
       .start();
+
+    // Mark both the overall server and the specific service as healthy
+    healthStatusManager.setStatus("", ServingStatus.SERVING);
+    healthStatusManager.setStatus(SERVICE_NAME, ServingStatus.SERVING);
 
     log.info("gRPC server started on port {}", grpcPort);
   }
@@ -72,42 +51,19 @@ public class GrpcServer {
   public void stop() throws InterruptedException {
     if (server != null) {
       log.info("Shutting down gRPC server...");
+
+      // Signal NOT_SERVING before draining so load balancers can stop routing
+      if (healthStatusManager != null) {
+        healthStatusManager.setStatus("", ServingStatus.NOT_SERVING);
+        healthStatusManager.setStatus(SERVICE_NAME, ServingStatus.NOT_SERVING);
+      }
+
       server.shutdown();
       if (!server.awaitTermination(30, TimeUnit.SECONDS)) {
         log.warn("gRPC server did not terminate within 30 seconds; forcing shutdown");
         server.shutdownNow();
       }
       log.info("gRPC server stopped");
-    }
-  }
-
-  // Implementation of the gRPC service
-  private class LibraryServiceImpl extends LibraryServiceGrpc.LibraryServiceImplBase {
-
-    @Override
-    public void getBook(BookRequest request, StreamObserver<BookResponse> responseObserver) {
-      Optional<BookResponse> book = books.stream()
-        .filter(b -> b.getId() == request.getId())
-        .findFirst();
-
-      if (book.isPresent()) {
-        responseObserver.onNext(book.get());
-        responseObserver.onCompleted();
-      } else {
-        responseObserver.onError(
-          Status.NOT_FOUND
-            .withDescription("Book with id " + request.getId() + " not found")
-            .asRuntimeException()
-        );
-      }
-    }
-
-    @Override
-    public void listBooks(Empty request, StreamObserver<BookList> responseObserver) {
-      BookList.Builder builder = BookList.newBuilder();
-      builder.addAllBooks(books);
-      responseObserver.onNext(builder.build());
-      responseObserver.onCompleted();
     }
   }
 }
