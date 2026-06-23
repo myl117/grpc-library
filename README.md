@@ -1,7 +1,7 @@
 # gRPC Microservice Library System
 
 A polyglot demo project showing microservice communication with [gRPC](https://grpc.io/).
-The system models a simple library — exposing two operations (`GetBook` and `ListBooks`) — served by a Java backend and consumed by both a browser and a Node.js client.
+The system models a simple library, exposing two operations (`GetBook` and `ListBooks`), served by a Java backend and consumed by both a browser and a Node.js client.
 
 ---
 
@@ -25,7 +25,7 @@ The system models a simple library — exposing two operations (`GetBook` and `L
 │  LibraryService · gRPC Health v1 · Proto Reflection             │
 └─────────────────────────────────────────────────────────────────┘
                  ▲
-                 │ HTTP/2 / gRPC (direct — bypasses Envoy)
+                 │ HTTP/2 / gRPC (direct, bypasses Envoy)
 ┌────────────────┴────────────────────────────────────────────────┐
 │  Node.js TypeScript gRPC Client (port 9090)                     │
 └─────────────────────────────────────────────────────────────────┘
@@ -56,7 +56,7 @@ The system models a simple library — exposing two operations (`GetBook` and `L
 
 ## Quick Start (Docker Compose)
 
-The entire stack — Java server, Envoy proxy, and browser client — can be started with a single command:
+The entire stack (Java server, Envoy proxy, and browser client) can be started with a single command:
 
 ```bash
 docker-compose up --build
@@ -80,7 +80,7 @@ docker-compose down
 
 Start each component in a separate terminal, in this order.
 
-### 1 — Java gRPC Server
+### 1 - Java gRPC Server
 
 ```bash
 cd java-grpc-library-service
@@ -95,7 +95,7 @@ GRPC_SERVER_PORT=9191 ./mvnw spring-boot:run
 
 Or add `grpc.server.port=9191` to `src/main/resources/application.properties`.
 
-### 2 — Envoy Proxy
+### 2 - Envoy Proxy
 
 ```bash
 cd envoy
@@ -104,7 +104,7 @@ bash run-envoy.sh
 
 Envoy listens on port **8282** and forwards to `host.docker.internal:9090`.
 
-### 3 — Browser Client
+### 3 - Browser Client
 
 ```bash
 cd browser-client
@@ -114,7 +114,7 @@ npm run dev
 
 Open http://localhost:8081 then check the browser dev console for the gRPC responses.
 
-### 4 — Node.js Client (optional)
+### 4 - Node.js Client (optional)
 
 ```bash
 cd node-grpc-client
@@ -146,7 +146,7 @@ cd java-grpc-library-service
 ./mvnw test
 ```
 
-Tests use an in-process gRPC server — no network I/O or Spring context is started.
+Tests use an in-process gRPC server - no network I/O or Spring context is started.
 
 ---
 
