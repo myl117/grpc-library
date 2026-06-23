@@ -6,24 +6,30 @@ import com.myl117.java.library.grpc.service.LibraryProto.BookList;
 import com.myl117.java.library.grpc.service.LibraryServiceGrpc;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.Status;
 import io.grpc.protobuf.services.ProtoReflectionService;
 import io.grpc.stub.StreamObserver;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class GrpcServer {
 
+  private static final Logger log = LoggerFactory.getLogger(GrpcServer.class);
+
   private Server server;
 
-  // In-memory list of books
-  private final List <BookResponse> books = new ArrayList <>();
+  // In-memory list of books — CopyOnWriteArrayList for thread safety under concurrent gRPC requests
+  private final List<BookResponse> books = new CopyOnWriteArrayList<>();
 
   @PostConstruct
   public void start() throws IOException {
@@ -54,14 +60,19 @@ public class GrpcServer {
       .build()
       .start();
 
-    System.out.println("gRPC server started on port 9090");
+    log.info("gRPC server started on port 9090");
   }
 
   @PreDestroy
-  public void stop() {
+  public void stop() throws InterruptedException {
     if (server != null) {
+      log.info("Shutting down gRPC server...");
       server.shutdown();
-      System.out.println("gRPC server stopped");
+      if (!server.awaitTermination(30, TimeUnit.SECONDS)) {
+        log.warn("gRPC server did not terminate within 30 seconds; forcing shutdown");
+        server.shutdownNow();
+      }
+      log.info("gRPC server stopped");
     }
   }
 
@@ -69,20 +80,21 @@ public class GrpcServer {
   private class LibraryServiceImpl extends LibraryServiceGrpc.LibraryServiceImplBase {
 
     @Override
-    public void getBook(BookRequest request, StreamObserver <BookResponse> responseObserver) {
-      Optional <BookResponse> book = books.stream()
+    public void getBook(BookRequest request, StreamObserver<BookResponse> responseObserver) {
+      Optional<BookResponse> book = books.stream()
         .filter(b -> b.getId() == request.getId())
         .findFirst();
 
-      responseObserver.onNext(book.orElse(
-        BookResponse.newBuilder()
-        .setId(0)
-        .setTitle("Not Found")
-        .setAuthor("")
-        .setAvailable(false)
-        .build()
-      ));
-      responseObserver.onCompleted();
+      if (book.isPresent()) {
+        responseObserver.onNext(book.get());
+        responseObserver.onCompleted();
+      } else {
+        responseObserver.onError(
+          Status.NOT_FOUND
+            .withDescription("Book with id " + request.getId() + " not found")
+            .asRuntimeException()
+        );
+      }
     }
 
     @Override
