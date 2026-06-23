@@ -10,13 +10,14 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class GrpcServer {
+public class GrpcServer implements CommandLineRunner {
 
   private static final Logger log = LoggerFactory.getLogger(GrpcServer.class);
 
@@ -45,6 +46,14 @@ public class GrpcServer {
     healthStatusManager.setStatus(SERVICE_NAME, ServingStatus.SERVING);
 
     log.info("gRPC server started on port {}", grpcPort);
+  }
+
+  @Override
+  public void run(String... args) throws Exception {
+    if (server != null) {
+      log.info("Keeping gRPC server running (awaiting termination)...");
+      server.awaitTermination();
+    }
   }
 
   @PreDestroy

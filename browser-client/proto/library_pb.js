@@ -537,12 +537,11 @@ proto.DeleteBookResponse.prototype.setMessage = function(v) { return jspb.Messag
 
 // ─── BookList ─────────────────────────────────────────────────────────────────
 
-proto.BookList.repeatedFields_ = [1];
-
 proto.BookList = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, proto.BookList.repeatedFields_, null);
 };
 goog.inherits(proto.BookList, jspb.Message);
+proto.BookList.repeatedFields_ = [1];
 if (goog.DEBUG && !COMPILED) { proto.BookList.displayName = 'proto.BookList'; }
 
 if (jspb.Message.GENERATE_TO_OBJECT) {

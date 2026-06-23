@@ -58,15 +58,24 @@ The system models a library management system, exposing full CRUD operations (`G
 | [protoc](https://grpc.io/docs/protoc-installation/) | >= 3.24 | Regenerate gRPC-Web JS stubs |
 | [protoc-gen-grpc-web](https://github.com/grpc/grpc-web/releases) | >= 1.5 | Regenerate gRPC-Web JS stubs |
 
----
+## Quick Start
 
-## Quick Start (Docker Compose)
-
-The entire stack (Java server, Envoy proxy, and browser client) can be started with a single command:
+You can start the entire stack (Java server, Envoy proxy, and browser client) using the NPM script shortcuts defined in the root package.json:
 
 ```bash
-docker-compose up --build
+# Start the stack (equivalent to docker compose up)
+npm start
+
+# Build and start the stack (equivalent to docker compose up --build)
+npm run start:build
+
+# Stop the stack (equivalent to docker compose down)
+npm run stop
 ```
+
+### Port Mapping
+
+Once the stack is running, the services are accessible at:
 
 | Service | URL |
 |---|---|
@@ -74,11 +83,7 @@ docker-compose up --build
 | Envoy (gRPC-Web proxy) | http://localhost:8282 |
 | Java gRPC server | localhost:9090 |
 
-To stop everything:
-
-```bash
-docker-compose down
-```
+---
 
 ---
 
