@@ -35,3 +35,9 @@ ehthumbs.db
 
 # node
 node_modules
+
+# webpack build output
+dist/
+
+# docker-compose local overrides
+docker-compose.override.yml

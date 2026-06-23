@@ -1,17 +1,16 @@
 syntax = "proto3";
 
-option java_package = "com.myl117.java.library.grpc.service";
-option java_outer_classname = "LibraryProto";
+package library;
+
+import "google/protobuf/empty.proto";
 
 service LibraryService {
   // Get information about a book by ID
   rpc GetBook (BookRequest) returns (BookResponse);
 
   // List all books
-  rpc ListBooks (Empty) returns (BookList);
+  rpc ListBooks (google.protobuf.Empty) returns (BookList);
 }
-
-message Empty {}
 
 message BookRequest {
   int32 id = 1;

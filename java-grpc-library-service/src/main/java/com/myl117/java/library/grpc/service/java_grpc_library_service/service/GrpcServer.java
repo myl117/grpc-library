@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import com.google.protobuf.Empty;
 
 @Component
 public class GrpcServer {
@@ -98,7 +99,7 @@ public class GrpcServer {
     }
 
     @Override
-    public void listBooks(com.myl117.java.library.grpc.service.LibraryProto.Empty Empty, StreamObserver <BookList> responseObserver) {
+    public void listBooks(Empty request, StreamObserver<BookList> responseObserver) {
       BookList.Builder builder = BookList.newBuilder();
       builder.addAllBooks(books);
       responseObserver.onNext(builder.build());
