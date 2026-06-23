@@ -26,6 +26,9 @@ ehthumbs.db
 # protobuf/gRPC generated code
 /target/generated-sources/
 /target/protoc-dependencies/
+# grpc-web generated JS stubs (regenerate via browser-client/compile-protobuf.sh)
+browser-client/proto/library_pb.js
+browser-client/proto/library_grpc_web_pb.js
 
 # spring boot
 /spring.log

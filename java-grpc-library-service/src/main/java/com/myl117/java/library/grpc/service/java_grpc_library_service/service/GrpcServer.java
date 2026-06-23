@@ -13,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -26,6 +27,9 @@ import com.google.protobuf.Empty;
 public class GrpcServer {
 
   private static final Logger log = LoggerFactory.getLogger(GrpcServer.class);
+
+  @Value("${grpc.server.port}")
+  private int grpcPort;
 
   private Server server;
 
@@ -54,14 +58,14 @@ public class GrpcServer {
       .setAvailable(false)
       .build());
 
-    // Start gRPC server on port 9090
-    server = ServerBuilder.forPort(9090)
+    // Start gRPC server on configured port
+    server = ServerBuilder.forPort(grpcPort)
       .addService(new LibraryServiceImpl())
       .addService(ProtoReflectionService.newInstance())
       .build()
       .start();
 
-    log.info("gRPC server started on port 9090");
+    log.info("gRPC server started on port {}", grpcPort);
   }
 
   @PreDestroy

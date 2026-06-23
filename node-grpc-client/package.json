@@ -1,4 +1,6 @@
 {
+  "name": "node-grpc-client",
+  "version": "0.0.1",
   "scripts": {
     "dev": "ts-node client.ts"
   },

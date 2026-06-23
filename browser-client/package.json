@@ -1,4 +1,6 @@
 {
+  "name": "browser-client",
+  "version": "0.0.1",
   "scripts": {
     "dev": "webpack serve"
   },
