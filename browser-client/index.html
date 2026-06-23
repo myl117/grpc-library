@@ -2,10 +2,914 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>gRPC-Web Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LibraryOS — Book Management</title>
+    <meta name="description" content="A premium gRPC-powered library management system. Create, read, update and delete books with Open Library integration." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* ── Design tokens ──────────────────────────────────────────── */
+      :root {
+        --bg-base:        #0d0f14;
+        --bg-surface:     #13161f;
+        --bg-elevated:    #1a1e2a;
+        --bg-card:        #1e2232;
+        --bg-glass:       rgba(30, 34, 50, 0.7);
+        --border-subtle:  rgba(255,255,255,0.07);
+        --border-focus:   rgba(139,92,246,0.6);
+
+        --accent-primary:  #8b5cf6;
+        --accent-light:    #a78bfa;
+        --accent-glow:     rgba(139,92,246,0.25);
+        --accent-secondary:#06b6d4;
+        --accent-danger:   #ef4444;
+        --accent-success:  #10b981;
+        --accent-warning:  #f59e0b;
+
+        --text-primary:   #f1f0ff;
+        --text-secondary: #9ca3af;
+        --text-muted:     #6b7280;
+
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 18px;
+        --radius-xl: 24px;
+
+        --shadow-card: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+        --shadow-glow: 0 0 32px rgba(139,92,246,0.2);
+        --shadow-modal: 0 24px 80px rgba(0,0,0,0.7);
+
+        --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+      }
+
+      /* ── Reset / Base ───────────────────────────────────────────── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        min-height: 100vh;
+        line-height: 1.5;
+        overflow-x: hidden;
+      }
+
+      /* Ambient gradient blobs */
+      body::before {
+        content: '';
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(ellipse 60% 40% at 10% 0%, rgba(139,92,246,0.12) 0%, transparent 60%),
+          radial-gradient(ellipse 50% 30% at 90% 100%, rgba(6,182,212,0.08) 0%, transparent 60%);
+      }
+
+      /* ── Header ─────────────────────────────────────────────────── */
+      header {
+        position: sticky; top: 0; z-index: 40;
+        background: rgba(13,15,20,0.85);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .header-inner {
+        max-width: 1280px; margin: 0 auto;
+        padding: 0 24px;
+        height: 68px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px;
+      }
+
+      .logo {
+        display: flex; align-items: center; gap: 10px;
+        text-decoration: none;
+      }
+
+      .logo-icon {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; flex-shrink: 0;
+        box-shadow: 0 0 16px var(--accent-glow);
+      }
+
+      .logo-text {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px; font-weight: 700;
+        background: linear-gradient(135deg, #f1f0ff, var(--accent-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .header-meta {
+        font-size: 13px; color: var(--text-muted);
+        display: flex; align-items: center; gap: 6px;
+      }
+
+      .status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--accent-success);
+        box-shadow: 0 0 8px var(--accent-success);
+        animation: pulse-dot 2s infinite;
+      }
+
+      @keyframes pulse-dot {
+        0%,100% { opacity: 1; }
+        50%      { opacity: 0.4; }
+      }
+
+      .btn-add-header {
+        display: flex; align-items: center; gap: 8px;
+        background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
+        color: #fff; border: none; border-radius: var(--radius-md);
+        padding: 10px 18px; font-size: 14px; font-weight: 600;
+        cursor: pointer; transition: var(--transition);
+        box-shadow: 0 4px 16px var(--accent-glow);
+        white-space: nowrap;
+      }
+
+      .btn-add-header:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 24px rgba(139,92,246,0.4);
+      }
+
+      /* ── Main content ───────────────────────────────────────────── */
+      main {
+        position: relative; z-index: 1;
+        max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px;
+      }
+
+      /* Hero section */
+      .hero {
+        margin-bottom: 48px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 24px; flex-wrap: wrap;
+      }
+
+      .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(28px, 4vw, 42px);
+        font-weight: 700;
+        background: linear-gradient(135deg, #f1f0ff 30%, var(--accent-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.15;
+      }
+
+      .hero-sub {
+        font-size: 15px; color: var(--text-secondary); margin-top: 6px;
+      }
+
+      /* Search / filter bar */
+      .toolbar {
+        display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      }
+
+      .search-wrap {
+        position: relative; flex: 1; min-width: 220px;
+      }
+
+      .search-icon {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        color: var(--text-muted); pointer-events: none; font-size: 16px;
+      }
+
+      #search-input {
+        width: 100%;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        border-radius: var(--radius-md);
+        padding: 10px 14px 10px 40px;
+        font-size: 14px; font-family: inherit;
+        transition: var(--transition);
+        outline: none;
+      }
+
+      #search-input:focus {
+        border-color: var(--border-focus);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+
+      .filter-btn {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-secondary);
+        border-radius: var(--radius-md);
+        padding: 10px 14px; font-size: 13px; font-family: inherit;
+        cursor: pointer; transition: var(--transition);
+        white-space: nowrap;
+      }
+
+      .filter-btn.active, .filter-btn:hover {
+        border-color: var(--border-focus);
+        color: var(--accent-light);
+        background: rgba(139,92,246,0.1);
+      }
+
+      /* Stats row */
+      .stats-row {
+        display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 36px;
+      }
+
+      .stat-chip {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 12px 18px;
+        display: flex; align-items: center; gap: 10px;
+      }
+
+      .stat-icon { font-size: 20px; }
+      .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+      .stat-value { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+
+      /* ── Book Grid ──────────────────────────────────────────────── */
+      #book-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 24px;
+      }
+
+      /* Skeleton loader */
+      .skeleton-card {
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        border: 1px solid var(--border-subtle);
+      }
+
+      .skeleton-cover {
+        height: 200px;
+        background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-glass) 50%, var(--bg-elevated) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+      }
+
+      .skeleton-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+      .skeleton-line {
+        height: 12px; border-radius: 6px;
+        background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-glass) 50%, var(--bg-elevated) 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+      }
+      .skeleton-line.short { width: 60%; }
+
+      @keyframes shimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+
+      /* Book card */
+      .book-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        transition: var(--transition);
+        position: relative;
+        box-shadow: var(--shadow-card);
+        cursor: default;
+      }
+
+      .book-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(139,92,246,0.3);
+        box-shadow: var(--shadow-card), var(--shadow-glow);
+      }
+
+      .book-card.entering {
+        animation: card-enter 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      }
+
+      @keyframes card-enter {
+        from { opacity: 0; transform: scale(0.92) translateY(10px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+      }
+
+      .book-cover-wrap {
+        position: relative; height: 200px; overflow: hidden;
+        background: linear-gradient(135deg, #1a1e2a, #2a1e3a);
+        flex-shrink: 0;
+      }
+
+      .book-cover-img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 0.4s ease;
+      }
+
+      .book-card:hover .book-cover-img { transform: scale(1.04); }
+
+      .book-cover-placeholder {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 8px; color: var(--text-muted);
+        background: linear-gradient(135deg, #1a1e2a, #221a30);
+      }
+
+      .book-cover-placeholder .book-emoji { font-size: 48px; filter: grayscale(0.3); }
+      .book-cover-placeholder .book-initial {
+        font-family: 'Playfair Display', serif;
+        font-size: 48px; font-weight: 700;
+        background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        line-height: 1;
+      }
+
+      .availability-badge {
+        position: absolute; top: 10px; right: 10px;
+        padding: 4px 10px; border-radius: 20px;
+        font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+        backdrop-filter: blur(8px);
+      }
+
+      .available   { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+      .unavailable { background: rgba(239,68,68,0.2);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+      .year-badge {
+        position: absolute; bottom: 10px; left: 10px;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(8px);
+        border-radius: 6px; padding: 3px 8px;
+        font-size: 11px; color: var(--text-secondary);
+        border: 1px solid var(--border-subtle);
+      }
+
+      .book-body {
+        padding: 16px; display: flex; flex-direction: column; flex: 1; gap: 6px;
+      }
+
+      .book-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 16px; font-weight: 600; color: var(--text-primary);
+        line-height: 1.3; display: -webkit-box;
+        -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      }
+
+      .book-author { font-size: 13px; color: var(--text-secondary); }
+
+      .book-isbn { font-size: 11px; color: var(--text-muted); font-family: monospace; margin-top: 2px; }
+
+      .book-desc {
+        font-size: 12px; color: var(--text-muted); margin-top: 6px;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        flex: 1;
+      }
+
+      .book-actions {
+        display: flex; gap: 8px; margin-top: 14px; padding-top: 12px;
+        border-top: 1px solid var(--border-subtle);
+      }
+
+      .btn-edit, .btn-delete {
+        flex: 1; border: none; border-radius: var(--radius-sm);
+        padding: 8px 0; font-size: 13px; font-weight: 500; font-family: inherit;
+        cursor: pointer; transition: var(--transition);
+        display: flex; align-items: center; justify-content: center; gap: 5px;
+      }
+
+      .btn-edit {
+        background: rgba(139,92,246,0.12);
+        color: var(--accent-light);
+        border: 1px solid rgba(139,92,246,0.2);
+      }
+
+      .btn-edit:hover {
+        background: rgba(139,92,246,0.22);
+        border-color: rgba(139,92,246,0.4);
+      }
+
+      .btn-delete {
+        background: rgba(239,68,68,0.1);
+        color: #f87171;
+        border: 1px solid rgba(239,68,68,0.2);
+      }
+
+      .btn-delete:hover {
+        background: rgba(239,68,68,0.2);
+        border-color: rgba(239,68,68,0.4);
+      }
+
+      /* Empty state */
+      #empty-state {
+        display: none;
+        grid-column: 1 / -1;
+        flex-direction: column; align-items: center; justify-content: center;
+        padding: 80px 24px; gap: 16px; text-align: center;
+      }
+
+      #empty-state.visible { display: flex; }
+      .empty-icon { font-size: 64px; opacity: 0.4; }
+      .empty-title { font-size: 20px; font-weight: 600; color: var(--text-secondary); }
+      .empty-sub { font-size: 14px; color: var(--text-muted); }
+
+      /* ── FAB ────────────────────────────────────────────────────── */
+      #fab {
+        position: fixed; bottom: 32px; right: 32px; z-index: 30;
+        width: 60px; height: 60px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
+        border: none; color: #fff; font-size: 28px; font-weight: 300;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 8px 32px rgba(139,92,246,0.5);
+        transition: var(--transition);
+      }
+
+      #fab:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 12px 40px rgba(139,92,246,0.6); }
+
+      /* ── Modal ──────────────────────────────────────────────────── */
+      #modal-overlay {
+        position: fixed; inset: 0; z-index: 50;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(6px);
+        display: flex; align-items: center; justify-content: center;
+        padding: 24px;
+        opacity: 0; pointer-events: none;
+        transition: opacity var(--transition);
+      }
+
+      #modal-overlay.open { opacity: 1; pointer-events: all; }
+
+      .modal {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-xl);
+        width: 100%; max-width: 560px; max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-modal);
+        transform: scale(0.95) translateY(12px);
+        transition: transform var(--transition);
+      }
+
+      #modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+      /* Scrollbar in modal */
+      .modal::-webkit-scrollbar { width: 6px; }
+      .modal::-webkit-scrollbar-track { background: transparent; }
+      .modal::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+
+      .modal-header {
+        padding: 24px 24px 0;
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      }
+
+      .modal-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px; font-weight: 700;
+        background: linear-gradient(135deg, #f1f0ff, var(--accent-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      }
+
+      .modal-close {
+        background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+        color: var(--text-secondary); border-radius: 8px;
+        width: 32px; height: 32px; font-size: 18px;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        transition: var(--transition); flex-shrink: 0;
+      }
+
+      .modal-close:hover { color: var(--text-primary); background: var(--bg-card); }
+
+      .modal-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+      /* Open Library search section */
+      .ol-search-section {
+        background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.06));
+        border: 1px solid rgba(139,92,246,0.2);
+        border-radius: var(--radius-md);
+        padding: 14px;
+      }
+
+      .ol-search-label {
+        font-size: 11px; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.08em; color: var(--accent-light); margin-bottom: 8px;
+        display: flex; align-items: center; gap: 6px;
+      }
+
+      .ol-search-row {
+        display: flex; gap: 8px;
+      }
+
+      #ol-search-input {
+        flex: 1;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        border-radius: var(--radius-sm);
+        padding: 9px 12px; font-size: 13px; font-family: inherit;
+        outline: none; transition: var(--transition);
+      }
+
+      #ol-search-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px var(--accent-glow); }
+
+      #ol-search-btn {
+        background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
+        color: #fff; border: none; border-radius: var(--radius-sm);
+        padding: 9px 16px; font-size: 13px; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: var(--transition); white-space: nowrap;
+        display: flex; align-items: center; gap: 6px;
+      }
+
+      #ol-search-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+      #ol-search-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+      #ol-results {
+        margin-top: 10px; display: flex; flex-direction: column; gap: 6px;
+        max-height: 180px; overflow-y: auto;
+      }
+
+      #ol-results::-webkit-scrollbar { width: 4px; }
+      #ol-results::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
+
+      .ol-result-item {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--bg-card); border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm); padding: 8px 10px;
+        cursor: pointer; transition: var(--transition);
+      }
+
+      .ol-result-item:hover { border-color: var(--border-focus); background: rgba(139,92,246,0.08); }
+
+      .ol-result-cover {
+        width: 32px; height: 44px; border-radius: 3px; object-fit: cover;
+        background: var(--bg-elevated); flex-shrink: 0;
+      }
+
+      .ol-result-info { flex: 1; min-width: 0; }
+      .ol-result-title { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .ol-result-author { font-size: 11px; color: var(--text-muted); }
+
+      /* Form fields */
+      .form-row { display: flex; gap: 12px; }
+      .form-row .form-field { flex: 1; }
+
+      .form-field { display: flex; flex-direction: column; gap: 6px; }
+
+      .form-label {
+        font-size: 12px; font-weight: 500; color: var(--text-secondary);
+        text-transform: uppercase; letter-spacing: 0.06em;
+      }
+
+      .form-input, .form-textarea, .form-select {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px; font-size: 14px; font-family: inherit;
+        outline: none; transition: var(--transition);
+        width: 100%;
+      }
+
+      .form-input:focus, .form-textarea:focus, .form-select:focus {
+        border-color: var(--border-focus);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+      }
+
+      .form-textarea { resize: vertical; min-height: 80px; }
+
+      .form-select { appearance: none; cursor: pointer; }
+
+      .cover-preview-wrap {
+        display: flex; align-items: center; gap: 12px;
+        background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm); padding: 8px;
+      }
+
+      #cover-preview {
+        width: 44px; height: 60px; object-fit: cover;
+        border-radius: 4px; background: var(--bg-card); flex-shrink: 0;
+        display: none;
+      }
+
+      #cover-preview.visible { display: block; }
+
+      #form-cover-url {
+        flex: 1; background: transparent; border: none;
+        color: var(--text-primary); font-size: 13px; font-family: inherit;
+        outline: none; padding: 0;
+      }
+
+      .checkbox-wrap {
+        display: flex; align-items: center; gap: 10px; cursor: pointer;
+        background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-sm); padding: 10px 12px;
+        transition: var(--transition);
+        user-select: none;
+      }
+
+      .checkbox-wrap:hover { border-color: var(--border-focus); }
+
+      #form-available {
+        width: 18px; height: 18px; accent-color: var(--accent-primary);
+        cursor: pointer; flex-shrink: 0;
+      }
+
+      .checkbox-label { font-size: 14px; color: var(--text-secondary); }
+
+      .modal-footer {
+        padding: 0 24px 24px;
+        display: flex; gap: 10px; justify-content: flex-end;
+      }
+
+      .btn-cancel {
+        background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+        color: var(--text-secondary); border-radius: var(--radius-md);
+        padding: 11px 22px; font-size: 14px; font-weight: 500; font-family: inherit;
+        cursor: pointer; transition: var(--transition);
+      }
+
+      .btn-cancel:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.15); }
+
+      .btn-save {
+        background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
+        color: #fff; border: none; border-radius: var(--radius-md);
+        padding: 11px 28px; font-size: 14px; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: var(--transition);
+        box-shadow: 0 4px 16px var(--accent-glow);
+        display: flex; align-items: center; gap: 8px;
+      }
+
+      .btn-save:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139,92,246,0.4); }
+      .btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+      /* ── Delete confirm modal ───────────────────────────────────── */
+      #delete-overlay {
+        position: fixed; inset: 0; z-index: 60;
+        background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+        display: flex; align-items: center; justify-content: center; padding: 24px;
+        opacity: 0; pointer-events: none; transition: opacity var(--transition);
+      }
+
+      #delete-overlay.open { opacity: 1; pointer-events: all; }
+
+      .delete-modal {
+        background: var(--bg-surface); border: 1px solid rgba(239,68,68,0.3);
+        border-radius: var(--radius-xl); width: 100%; max-width: 400px;
+        padding: 32px 28px; text-align: center;
+        box-shadow: var(--shadow-modal);
+        transform: scale(0.95); transition: transform var(--transition);
+      }
+
+      #delete-overlay.open .delete-modal { transform: scale(1); }
+
+      .delete-icon { font-size: 48px; margin-bottom: 16px; }
+      .delete-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+      .delete-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+
+      .delete-btns { display: flex; gap: 10px; }
+
+      .btn-confirm-delete {
+        flex: 1; background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff; border: none; border-radius: var(--radius-md);
+        padding: 12px; font-size: 14px; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: var(--transition);
+      }
+
+      .btn-confirm-delete:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(239,68,68,0.4); }
+
+      /* ── Toast ──────────────────────────────────────────────────── */
+      #toast-container {
+        position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+        z-index: 100; display: flex; flex-direction: column; gap: 8px;
+        pointer-events: none; width: max-content; max-width: calc(100vw - 48px);
+      }
+
+      .toast {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 12px 18px; font-size: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        animation: toast-in 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        pointer-events: all;
+        backdrop-filter: blur(12px);
+      }
+
+      .toast.success { border-color: rgba(16,185,129,0.3); }
+      .toast.error   { border-color: rgba(239,68,68,0.3); }
+      .toast.info    { border-color: rgba(139,92,246,0.3); }
+
+      .toast-icon { font-size: 18px; }
+      .toast.out  { animation: toast-out 0.25s ease forwards; }
+
+      @keyframes toast-in  { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
+      @keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-8px) scale(0.96); } }
+
+      /* ── Loading spinner ────────────────────────────────────────── */
+      .spinner {
+        width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff; border-radius: 50%;
+        animation: spin 0.7s linear infinite; flex-shrink: 0;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ── Responsive ─────────────────────────────────────────────── */
+      @media (max-width: 600px) {
+        .hero { margin-bottom: 32px; }
+        .form-row { flex-direction: column; }
+        #fab { bottom: 24px; right: 24px; }
+        .stats-row { display: none; }
+      }
+    </style>
   </head>
   <body>
-    <h1>gRPC-Web Demo</h1>
-    <p>Open the console to see gRPC-Web results.</p>
+
+    <!-- Header -->
+    <header>
+      <div class="header-inner">
+        <a class="logo" href="#">
+          <div class="logo-icon">📚</div>
+          <span class="logo-text">LibraryOS</span>
+        </a>
+        <div class="header-meta">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Connecting…</span>
+        </div>
+        <button class="btn-add-header" id="add-book-btn" aria-label="Add new book">
+          <span>＋</span> Add Book
+        </button>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main>
+      <!-- Hero -->
+      <div class="hero">
+        <div>
+          <h1 class="hero-title">Your Library Collection</h1>
+          <p class="hero-sub">Manage books via gRPC · Enrich with Open Library</p>
+        </div>
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="search-input" placeholder="Search books…" aria-label="Search books" />
+          </div>
+          <button class="filter-btn active" id="filter-all" data-filter="all">All</button>
+          <button class="filter-btn" id="filter-available" data-filter="available">Available</button>
+          <button class="filter-btn" id="filter-unavailable" data-filter="unavailable">Checked Out</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-chip">
+          <span class="stat-icon">📖</span>
+          <div>
+            <div class="stat-label">Total Books</div>
+            <div class="stat-value" id="stat-total">—</div>
+          </div>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-icon">✅</span>
+          <div>
+            <div class="stat-label">Available</div>
+            <div class="stat-value" id="stat-available">—</div>
+          </div>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-icon">📤</span>
+          <div>
+            <div class="stat-label">Checked Out</div>
+            <div class="stat-value" id="stat-out">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid -->
+      <div id="book-grid" role="list" aria-label="Book collection">
+        <!-- Skeleton placeholders -->
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton-cover"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </div>
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton-cover"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </div>
+        <div class="skeleton-card" aria-hidden="true">
+          <div class="skeleton-cover"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+          </div>
+        </div>
+        <div id="empty-state" role="status">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">No books found</div>
+          <div class="empty-sub">Try adjusting your search or add a new book.</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FAB -->
+    <button id="fab" aria-label="Add new book" title="Add new book">＋</button>
+
+    <!-- Add/Edit Modal -->
+    <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-title">Add Book</h2>
+          <button class="modal-close" id="modal-close" aria-label="Close modal">✕</button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Open Library search -->
+          <div class="ol-search-section">
+            <div class="ol-search-label">
+              🔎 Auto-fill from Open Library
+            </div>
+            <div class="ol-search-row">
+              <input type="text" id="ol-search-input" placeholder="Search by title, author, or ISBN…" aria-label="Search Open Library" />
+              <button id="ol-search-btn" aria-label="Search Open Library">Search</button>
+            </div>
+            <div id="ol-results" aria-live="polite" aria-label="Open Library search results"></div>
+          </div>
+
+          <!-- Title & Author -->
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="form-title">Title *</label>
+              <input type="text" class="form-input" id="form-title" placeholder="Book title" required />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="form-author">Author *</label>
+              <input type="text" class="form-input" id="form-author" placeholder="Author name" required />
+            </div>
+          </div>
+
+          <!-- ISBN & Year -->
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="form-isbn">ISBN</label>
+              <input type="text" class="form-input" id="form-isbn" placeholder="978-…" />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="form-year">Published Year</label>
+              <input type="number" class="form-input" id="form-year" placeholder="2024" min="1000" max="2099" />
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-field">
+            <label class="form-label" for="form-description">Description</label>
+            <textarea class="form-textarea" id="form-description" placeholder="Brief description of the book…"></textarea>
+          </div>
+
+          <!-- Cover URL -->
+          <div class="form-field">
+            <label class="form-label" for="form-cover-url">Cover Image URL</label>
+            <div class="cover-preview-wrap">
+              <img id="cover-preview" src="" alt="Book cover preview" />
+              <input type="url" id="form-cover-url" placeholder="https://covers.openlibrary.org/b/isbn/…" />
+            </div>
+          </div>
+
+          <!-- Availability -->
+          <div class="form-field">
+            <label class="form-label">Availability</label>
+            <label class="checkbox-wrap">
+              <input type="checkbox" id="form-available" checked />
+              <span class="checkbox-label">Available for borrowing</span>
+            </label>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" id="modal-cancel">Cancel</button>
+          <button class="btn-save" id="modal-save">
+            <span id="save-btn-text">Save Book</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete confirm overlay -->
+    <div id="delete-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="delete-modal">
+        <div class="delete-icon">🗑️</div>
+        <div class="delete-title" id="delete-title">Delete Book?</div>
+        <div class="delete-sub" id="delete-sub">This action cannot be undone.</div>
+        <div class="delete-btns">
+          <button class="btn-cancel" id="delete-cancel">Keep It</button>
+          <button class="btn-confirm-delete" id="delete-confirm">Yes, Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
   </body>
 </html>

@@ -1,42 +1,48 @@
 # gRPC Microservice Library System
 
 A polyglot demo project showing microservice communication with [gRPC](https://grpc.io/).
-The system models a simple library, exposing two operations (`GetBook` and `ListBooks`), served by a Java backend and consumed by both a browser and a Node.js client.
+The system models a library management system, exposing full CRUD operations (`GetBook`, `ListBooks`, `CreateBook`, `UpdateBook`, `DeleteBook`), served by a Java backend and consumed by both a browser and a Node.js client. The browser client integrates with the [Open Library API](https://openlibrary.org/developers/api) to auto-fill book metadata and cover art.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  Browser (port 8081)                                            │
-│  grpc-web JS client (webpack-dev-server)                        │
-└────────────────┬────────────────────────────────────────────────┘
-                 │ HTTP/1.1  (grpc-web protocol)
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Envoy Proxy (port 8282)                                        │
-│  Translates grpc-web ↔ native gRPC (HTTP/2)                     │
-└────────────────┬────────────────────────────────────────────────┘
-                 │ HTTP/2 / gRPC
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Java Spring Boot gRPC Server (port 9090)                       │
-│  LibraryService · gRPC Health v1 · Proto Reflection             │
-└─────────────────────────────────────────────────────────────────┘
-                 ▲
-                 │ HTTP/2 / gRPC (direct, bypasses Envoy)
-┌────────────────┴────────────────────────────────────────────────┐
-│  Node.js TypeScript gRPC Client (port 9090)                     │
-└─────────────────────────────────────────────────────────────────┘
++------------------------------------------------------------------+
+|  Browser (port 8081)                                             |
+|  Premium dark-mode UI (webpack-dev-server + grpc-web)            |
++----------------------------+-------------------------------------+
+                             | HTTP/1.1  (grpc-web protocol)
+                             v
++------------------------------------------------------------------+
+|  Envoy Proxy (port 8282)                                         |
+|  Translates grpc-web to native gRPC (HTTP/2)                     |
++----------------------------+-------------------------------------+
+                             | HTTP/2 / gRPC
+                             v
++------------------------------------------------------------------+
+|  Java Spring Boot gRPC Server (port 9090)                        |
+|  LibraryService, gRPC Health v1, Proto Reflection                |
++------------------------------------------------------------------+
+                             ^
+                             | HTTP/2 / gRPC (direct, bypasses Envoy)
++----------------------------+-------------------------------------+
+|  Node.js TypeScript gRPC Client                                  |
++------------------------------------------------------------------+
+
+                             +
+                             |
+                             v
+                  openlibrary.org/search.json   (book search, browser only)
+                  covers.openlibrary.org/...    (cover images, browser only)
 ```
 
 | Component | Language / Runtime | Role |
 |---|---|---|
 | `java-grpc-library-service` | Java 17, Spring Boot 4 | gRPC server |
-| `browser-client` | JS, webpack 5, grpc-web 2 | Browser gRPC-Web client |
+| `browser-client` | JS, webpack 5, grpc-web 2 | Browser gRPC-Web client + UI |
 | `node-grpc-client` | TypeScript 5, @grpc/grpc-js | CLI gRPC client |
-| `envoy` | Envoy v1.27.0 | gRPC-Web ↔ gRPC proxy |
+| `envoy` | Envoy v1.27.0 | gRPC-Web to gRPC proxy |
 
 ---
 
@@ -44,13 +50,13 @@ The system models a simple library, exposing two operations (`GetBook` and `List
 
 | Tool | Version | Purpose |
 |---|---|---|
-| [Docker](https://docs.docker.com/get-docker/) | ≥ 24 | Run the full stack |
-| [Docker Compose](https://docs.docker.com/compose/) | ≥ 2.20 | Orchestrate services |
+| [Docker](https://docs.docker.com/get-docker/) | >= 24 | Run the full stack |
+| [Docker Compose](https://docs.docker.com/compose/) | >= 2.20 | Orchestrate services |
 | [Java 17](https://adoptium.net/) | 17 (LTS) | Run / build the gRPC server locally |
-| [Maven](https://maven.apache.org/) | ≥ 3.9 | Build the Java service (or use `./mvnw`) |
-| [Node.js](https://nodejs.org/) | ≥ 20 | Run browser / Node clients locally |
-| [protoc](https://grpc.io/docs/protoc-installation/) | ≥ 3.24 | Regenerate gRPC-Web JS stubs |
-| [protoc-gen-grpc-web](https://github.com/grpc/grpc-web/releases) | ≥ 1.5 | Regenerate gRPC-Web JS stubs |
+| [Maven](https://maven.apache.org/) | >= 3.9 | Build the Java service (or use `./mvnw`) |
+| [Node.js](https://nodejs.org/) | >= 20 | Run browser / Node clients locally |
+| [protoc](https://grpc.io/docs/protoc-installation/) | >= 3.24 | Regenerate gRPC-Web JS stubs |
+| [protoc-gen-grpc-web](https://github.com/grpc/grpc-web/releases) | >= 1.5 | Regenerate gRPC-Web JS stubs |
 
 ---
 
@@ -73,6 +79,31 @@ To stop everything:
 ```bash
 docker-compose down
 ```
+
+---
+
+## Using the Browser UI
+
+Navigate to **http://localhost:8081** after starting the stack. The status dot in the header turns green when the gRPC server is reachable.
+
+### Adding a book
+
+1. Click **Add Book** in the header or the floating **+** button.
+2. In the modal, type a title or author in the **Open Library search** box and click **Search**.
+3. Click any result to auto-fill the title, author, ISBN, publication year, and cover image.
+4. Adjust any fields and click **Save Book**.
+
+### Editing a book
+
+Click the **Edit** button on any book card. The modal opens pre-filled with the current data. Make changes and click **Update Book**.
+
+### Deleting a book
+
+Click the **Delete** button on any card. A confirmation dialog appears before the book is removed.
+
+### Filtering and searching
+
+Use the search bar to filter by title, author, or ISBN. Use the **All / Available / Checked Out** buttons to filter by availability.
 
 ---
 
@@ -112,7 +143,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:8081 then check the browser dev console for the gRPC responses.
+Open http://localhost:8081.
 
 ### 4 - Node.js Client (optional)
 
@@ -122,13 +153,13 @@ npm install
 npm run dev
 ```
 
-Connects directly to the Java server on port **9090** (bypasses Envoy).
+Connects directly to the Java server on port **9090** (bypasses Envoy). Runs through all five CRUD operations as a demo.
 
 ---
 
 ## Regenerating gRPC-Web Stubs
 
-The browser client uses pre-generated JS stubs. To regenerate them after changing `library.proto`:
+The browser client ships with pre-generated JS stubs. To regenerate them after changing `library.proto`:
 
 ```bash
 cd browser-client
@@ -146,8 +177,6 @@ cd java-grpc-library-service
 ./mvnw test
 ```
 
-Tests use an in-process gRPC server - no network I/O or Spring context is started.
-
 ---
 
 ## API Reference
@@ -164,11 +193,7 @@ Fetch a single book by its ID.
 rpc GetBook (BookRequest) returns (BookResponse);
 ```
 
-| Field | Type | Description |
-|---|---|---|
-| `id` | `int32` | Book ID to look up |
-
-**Response:** `BookResponse` on success, `NOT_FOUND` status if the ID does not exist.
+Returns `NOT_FOUND` if the ID does not exist.
 
 #### `ListBooks`
 
@@ -178,16 +203,74 @@ Return all books in the catalogue.
 rpc ListBooks (google.protobuf.Empty) returns (BookList);
 ```
 
-**Response:** `BookList` containing a repeated list of `BookResponse`.
+#### `CreateBook`
+
+Add a new book. Title and author are required.
+
+```proto
+rpc CreateBook (CreateBookRequest) returns (BookResponse);
+```
+
+Returns `INVALID_ARGUMENT` if title or author is blank.
+
+#### `UpdateBook`
+
+Replace all fields of an existing book by ID.
+
+```proto
+rpc UpdateBook (UpdateBookRequest) returns (BookResponse);
+```
+
+Returns `NOT_FOUND` if the ID does not exist.
+
+#### `DeleteBook`
+
+Remove a book by ID.
+
+```proto
+rpc DeleteBook (BookRequest) returns (DeleteBookResponse);
+```
+
+Returns `NOT_FOUND` if the ID does not exist.
 
 ### Message Types
 
 ```proto
 message BookResponse {
-  int32  id        = 1;
-  string title     = 2;
-  string author    = 3;
-  bool   available = 4;
+  int32  id             = 1;
+  string title          = 2;
+  string author         = 3;
+  bool   available      = 4;
+  string isbn           = 5;
+  string description    = 6;
+  string cover_url      = 7;
+  int32  published_year = 8;
+}
+
+message CreateBookRequest {
+  string title          = 1;
+  string author         = 2;
+  bool   available      = 3;
+  string isbn           = 4;
+  string description    = 5;
+  string cover_url      = 6;
+  int32  published_year = 7;
+}
+
+message UpdateBookRequest {
+  int32  id             = 1;
+  string title          = 2;
+  string author         = 3;
+  bool   available      = 4;
+  string isbn           = 5;
+  string description    = 6;
+  string cover_url      = 7;
+  int32  published_year = 8;
+}
+
+message DeleteBookResponse {
+  bool   success = 1;
+  string message = 2;
 }
 
 message BookList {
@@ -197,12 +280,23 @@ message BookList {
 
 ---
 
+## Open Library Integration
+
+The browser client calls the Open Library API directly from the browser (no proxy needed, CORS is supported).
+
+| Endpoint | Usage |
+|---|---|
+| `https://openlibrary.org/search.json?q=...` | Search books by title, author, or ISBN |
+| `https://covers.openlibrary.org/b/id/{id}-L.jpg` | Fetch cover image by Open Library cover ID |
+| `https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg` | Fetch cover image by ISBN |
+
+---
+
 ## Health Check
 
 The server implements the [gRPC Health Checking Protocol v1](https://grpc.io/docs/guides/health-checking/).
 
 ```bash
-# Inspect with grpcurl (requires server reflection to be enabled)
 grpcurl -plaintext localhost:9090 grpc.health.v1.Health/Check
 ```
 
@@ -223,11 +317,15 @@ Set via `application.properties` or as environment variables (e.g. `GRPC_SERVER_
 
 ```
 grpc-library/
-├── java-grpc-library-service/   Java Spring Boot gRPC server
-│   ├── src/main/proto/          Proto definitions
-│   └── src/test/java/           Unit tests (in-process gRPC)
-├── browser-client/              Webpack + grpc-web browser client
-├── node-grpc-client/            TypeScript gRPC CLI client
-├── envoy/                       Envoy proxy config & run script
-└── docker-compose.yml           Orchestrates the full stack
++-- java-grpc-library-service/   Java Spring Boot gRPC server
+|   +-- src/main/proto/          Proto definitions (library.proto)
+|   +-- src/main/java/           Service implementation (CRUD)
+|   +-- src/test/java/           Unit tests
++-- browser-client/              Webpack + grpc-web browser client
+|   +-- proto/                   Pre-generated JS protobuf stubs
+|   +-- index.html               Premium dark-mode UI
+|   +-- index.js                 CRUD logic + Open Library integration
++-- node-grpc-client/            TypeScript gRPC CLI client
++-- envoy/                       Envoy proxy config and run script
++-- docker-compose.yml           Orchestrates the full stack
 ```
