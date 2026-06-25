@@ -1,15 +1,10 @@
 # gRPC Microservice Library System
 
-[![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)](https://adoptium.net/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4-6DB33F?logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![gRPC](https://img.shields.io/badge/gRPC-enabled-244c5a?logo=grpc&logoColor=white)](https://grpc.io/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![Envoy](https://img.shields.io/badge/Envoy_Proxy-v1.27-AC6199?logo=envoy-proxy&logoColor=white)](https://www.envoyproxy.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub last commit](https://img.shields.io/github/last-commit/myl117/grpc-library)](https://github.com/myl117/grpc-library/commits/main)
-[![GitHub stars](https://img.shields.io/github/stars/myl117/grpc-library?style=social)](https://github.com/myl117/grpc-library/stargazers)
+[![Backend](https://img.shields.io/badge/Backend-Java%2017%20%2F%20Spring%20Boot-ED8B00?style=flat-square&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Protocol](https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf-244c5a?style=flat-square&logo=grpc&logoColor=white)](https://grpc.io/)
+[![Client](https://img.shields.io/badge/Client-Node.js%2020%20%2F%20TypeScript-339933?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Proxy](https://img.shields.io/badge/Proxy-Envoy%20v1.27-AC6199?style=flat-square&logo=envoyproxy&logoColor=white)](https://www.envoyproxy.io/)
+[![Docker](https://img.shields.io/badge/Deploy-Docker%20Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
 A polyglot demo project showing microservice communication with [gRPC](https://grpc.io/).
 The system models a library management system, exposing full CRUD operations (`GetBook`, `ListBooks`, `CreateBook`, `UpdateBook`, `DeleteBook`), served by a Java backend and consumed by both a browser and a Node.js client. The browser client integrates with the [Open Library API](https://openlibrary.org/developers/api) to auto-fill book metadata and cover art.
